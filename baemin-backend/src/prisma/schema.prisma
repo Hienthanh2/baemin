@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model food {
+  id               Int           @id @default(autoincrement())
+  name             String        @db.VarChar(100)
+  description      String?       @db.Text
+  price            Decimal       @db.Decimal(10, 2)
+  store_id         Int
+  food_category_id Int
+  menu_id          Int
+  created_at       DateTime?     @default(now()) @db.Timestamp(0)
+  updated_at       DateTime?     @default(now()) @db.Timestamp(0)
+  food_store       food_store    @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "food_ibfk_1")
+  food_category    food_category @relation(fields: [food_category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "food_ibfk_2")
+  menu             menu          @relation(fields: [menu_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "food_ibfk_3")
+  user_cart        user_cart[]
+
+  @@index([food_category_id], map: "food_category_id")
+  @@index([menu_id], map: "menu_id")
+  @@index([store_id], map: "store_id")
+}
+
+model food_category {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique(map: "name") @db.VarChar(100)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @default(now()) @db.Timestamp(0)
+  food       food[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model food_store {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(100)
+  address      String    @db.VarChar(255)
+  open_time    DateTime  @db.Time(0)
+  close_time   DateTime  @db.Time(0)
+  rating_score Decimal?  @db.Decimal(3, 2)
+  min_price    Decimal   @db.Decimal(10, 2)
+  max_price    Decimal   @db.Decimal(10, 2)
+  created_at   DateTime? @default(now()) @db.Timestamp(0)
+  updated_at   DateTime? @default(now()) @db.Timestamp(0)
+  food         food[]
+  menu         menu[]
+}
+
+model menu {
+  id         Int        @id @default(autoincrement())
+  name       String     @db.VarChar(100)
+  store_id   Int
+  created_at DateTime?  @default(now()) @db.Timestamp(0)
+  updated_at DateTime?  @default(now()) @db.Timestamp(0)
+  food       food[]
+  food_store food_store @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "menu_ibfk_1")
+
+  @@index([store_id], map: "store_id")
+}
+
+model user {
+  id           Int         @id @default(autoincrement())
+  first_name   String      @db.VarChar(50)
+  last_name    String      @db.VarChar(50)
+  username     String      @unique(map: "username") @db.VarChar(50)
+  phone_number String      @unique(map: "phone_number") @db.VarChar(20)
+  email        String      @unique(map: "email") @db.VarChar(100)
+  password     String      @db.VarChar(255)
+  created_at   DateTime?   @default(now()) @db.Timestamp(0)
+  updated_at   DateTime?   @default(now()) @db.Timestamp(0)
+  user_cart    user_cart[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user_cart {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  food_id     Int
+  item_count  Int
+  total_price Decimal   @db.Decimal(10, 2)
+  created_at  DateTime? @default(now()) @db.Timestamp(0)
+  updated_at  DateTime? @default(now()) @db.Timestamp(0)
+  user        user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_cart_ibfk_1")
+  food        food      @relation(fields: [food_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_cart_ibfk_2")
+
+  @@index([food_id], map: "food_id")
+  @@index([user_id], map: "user_id")
+}
